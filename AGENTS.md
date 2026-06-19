@@ -44,7 +44,16 @@
 - localStorage keys: `thilal_theme`, `thilal_bookmarks`, `thilal_history`, `thilal_completed`
 - Default: dark mode. Brand accent: `#F27D26` (gilded gold)
 
+## Workflow Rules (Mandatory)
+- **Branch before code:** Before executing ANY plan/feature/fix, create a new branch from `main`:
+  1. `git checkout main && git pull origin main`
+  2. `git checkout -b <type>/<short-description>`
+  3. Types: `feature/`, `fix/`, `refactor/`, `docs/`, `test/`, `chore/`, `hotfix/`
+- **Commit** → **Push** → **PR** → **Merge** → **Update main** on completion
+- **Never delete the branch** after merge
+
 ## Notable
-- No test framework or test files
+- Test framework: Vitest + Testing Library (46 tests across 7 files)
+- `pnpm test` to run
 - No CI/CD, Docker, or GitHub Actions
 - Arabic-first; all user-facing text is Arabic
