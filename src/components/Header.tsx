@@ -33,7 +33,7 @@ export function Header({
         <div className="flex flex-col text-right">
           <span className="text-[9px] uppercase tracking-[0.3em] text-brand-grey font-mono mb-1 leading-none font-bold">AL-QALAM STUDIO PORTFOLIO</span>
           <h2 className="text-xl sm:text-2xl font-bold font-serif leading-none tracking-tight text-brand-rich dark:text-brand-dark-active">
-            فِي ضِلَالِ <span className="italic font-normal text-gilded-gold font-serif">الْقُرْآن</span>
+            فِي ظلَالِ <span className="italic font-normal text-gilded-gold font-serif">الْقُرْآن</span>
           </h2>
         </div>
         <span className="text-[10px] px-2.5 py-0.5 rounded-none bg-gilded-gold/10 text-gilded-gold border border-gilded-gold/20 font-mono font-bold shrink-0 hidden sm:inline-block">
