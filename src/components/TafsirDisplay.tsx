@@ -19,7 +19,7 @@ export function TafsirDisplay({ tafsirText, verseRangeValue }: TafsirDisplayProp
           AYAH {toArabicNumerals(parseInt(verseRangeValue.split('-')[0] || '0'))}+
         </span>
       </div>
-      <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert space-y-3 font-serif text-justify text-sm sm:text-base">
+      <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert space-y-3 font-serif text-justify text-base sm:text-lg">
         {tafsirText.split('\n').filter(Boolean).map((point, i) => (
           <p key={i} className={isDarkMode ? 'text-[#d6d2ca]' : 'text-brand-rich'}>{point}</p>
         ))}

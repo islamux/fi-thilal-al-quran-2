@@ -38,7 +38,7 @@ export function OverviewTab({ tafsirText, selectedSurah, hasTafsir }: OverviewTa
               SURAH {toArabicNumerals(selectedSurah.id)}
             </span>
           </div>
-          <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert space-y-3 font-serif text-justify text-sm sm:text-base">
+          <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert space-y-3 font-serif text-justify text-base sm:text-lg">
             {tafsirText.split('\n').filter(Boolean).map((point, i) => (
               <p key={i} className={isDarkMode ? 'text-[#d6d2ca] font-serif' : 'text-brand-rich font-serif'}>
                 {point}
