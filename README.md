@@ -1,22 +1,55 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+<h1>في ظلال القرآن</h1>
+<p><strong>Fi Thilal al-Quran</strong> — A digital reader for Sayyid Qutb's monumental tafsir.</p>
 </div>
 
-# Run and deploy your AI Studio app
+## About
 
-This contains everything you need to run your app locally.
+A fully offline web application for reading **في ظلال القرآن** by Sayyid Qutb. Contains 110 surahs with 305 verse-range sections of tafsir text, fully local with no external API dependencies.
 
-View your app in AI Studio: https://ai.studio/apps/257e67f6-0495-4bba-9c2f-7f5458829973
+**Features:**
+- Full-text search across all tafsir content
+- Dark/light theme with gilded gold (`#F27D26`) accents
+- Bookmark surahs and track study completion
+- Verse text highlighted in gold to distinguish from commentary
+- Responsive RTL layout
+- Juz navigation
 
-## Run Locally
+**Missing surahs** (no source text): 44 (الدخان), 50 (ق), 76 (الإنسان), 89 (الفجر)
 
-**Prerequisites:**  Node.js + pnpm
+## Tech Stack
 
+- **Frontend:** React 19, TypeScript 5.8, Tailwind CSS v4, Vite 6
+- **Backend:** Express 4 (single process, Vite middleware)
+- **Testing:** Vitest + Testing Library
+- **Package manager:** pnpm
 
-1. Install dependencies:
-   `pnpm install`
-2. Set the `TAFSIR_DATA_PATH` in [.env.local](.env.local) if needed (default: `src/data/tafsir.ts`)
-3. Extract tafsir data:
-   `pnpm exec tsx scripts/extract-tafsir.ts`
-4. Run the app:
-   `pnpm run dev`
+## Getting Started
+
+**Prerequisites:** Node.js + pnpm
+
+```bash
+pnpm install
+pnpm run dev
+```
+
+Opens at `http://0.0.0.0:3000`.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm run dev` | Start dev server |
+| `pnpm run build` | Build for production → `dist/` |
+| `pnpm run start` | Run production server |
+| `pnpm run lint` | TypeScript type check |
+| `pnpm test` | Run tests |
+| `pnpm exec tsx scripts/extract-tafsir.ts` | Regenerate `src/data/tafsir.ts` from `.doc` sources |
+
+## Data
+
+All tafsir content is extracted from `fi-thila-al-quran-word-src/*.doc` files and compiled into `src/data/tafsir.ts` (~18 MB). No AI or network APIs are used for tafsir or search — everything runs locally.
+
+## License
+
+The codebase is provided for reference. The tafsir text is the work of Sayyid Qutb (شهيد الفكرة).
