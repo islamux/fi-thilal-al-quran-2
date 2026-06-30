@@ -13,3 +13,4 @@ src/data/tafsir.ts
 .opencode/
 .npmrc
 .env.example
+command-center/
