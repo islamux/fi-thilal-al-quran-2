@@ -1,71 +1,102 @@
-# Testing Plan — Local Tafsir Data Conversion
+# Testing — في ظلال القرآن
 
-## 1. Automated Checks
+## Stack
 
-### `pnpm run lint`
-```
-$ pnpm run lint
-pnpm exec tsc --noEmit
-→ Must exit with code 0, no errors.
-```
+- **Vitest 4** — test runner
+- **Testing Library** (`@testing-library/react` + `@testing-library/jest-dom`) — DOM assertions
+- **jsdom** — browser environment for component/hook tests
 
-### `pnpm run build`
-```
-$ pnpm run build
-vite build + esbuild server.ts
-→ Must exit with code 0.
-→ Check dist/ has: index.html, assets/index-*.js, assets/*.css
-→ Server bundle at dist/server.cjs
+All test files are **colocated** with their source: `src/utils/search.ts` → `src/utils/search.test.ts`.
+
+## Running Tests
+
+```bash
+pnpm test          # Run once
+pnpm test:watch    # Watch mode
 ```
 
-## 2. Data Verification
+## Test Suite (103 tests, 10 files)
 
-### 2.1 Extraction count
-```
-$ pnpm exec tsx scripts/extract-tafsir.ts
-→ Expected output: "Written 110 surahs (305 sections)"
-→ File size ~18 MB
-```
+| File | Tests | What it covers |
+|------|-------|----------------|
+| `utils/tafsir-format.test.ts` | 32 | Paragraph splitting from raw `.doc` text — keyword detection, punctuation heuristics, edge cases |
+| `utils/search.test.ts` | 12 | Word-matching across sections, scoring, excerpt generation, empty query |
+| `utils/localStorage.test.ts` | 11 | `get`, `set`, `remove`, `clear`, `onChange` callbacks |
+| `utils/syncBackend.test.ts` | 11 | Supabase sync — push, pull, merge, conflict resolution |
+| `utils/highlight.test.ts` | 10 | `highlightText()` — split, multi-word, Arabic, no-match |
+| `utils/tafsir-data.test.ts` | 8 | `getTafsirText()` — full surah, verse range, missing surah |
+| `components/QuickSearch.test.tsx` | 5 | Renders buttons, click triggers search callback |
+| `components/SectionSelector.test.tsx` | 5 | Renders sections, selection changes value, empty state |
+| `components/TafsirDisplay.test.tsx` | 4 | Renders paragraphs, highlights ayah text, handles null |
+| `utils/index.test.ts` | 5 | `toArabicNumerals()` — number conversion, edge cases |
 
-### 2.2 Missing surahs
-Check `SURAHS_WITH_TAFSIR` in `src/data/tafsir.ts`:
-- 44 (الدخان), 50 (ق), 76 (الإنسان), 89 (الفجر) must be absent
-- All 110 others must be present
+## Test Patterns
 
-## 3. Manual UI Tests (Dev Server)
+### Pure function tests (no React)
 
-Start dev server: `pnpm run dev`
+The simplest pattern — import a function, call it, assert the result:
 
-### 3.1 Surah navigation
-1. Click surah 1 (الفاتحة) → OverviewTab shows tafsir text
-2. Click surah 2 (البقرة) → text loads instantly (no spinner)
-3. Click surah 44 (الدخان) → shows "لم يرد تفسير" message
-4. Click surah 89 (الفجر) → shows missing message
-5. Verify text is continuous prose (no empty sections)
+```ts
+// src/utils/search.test.ts
+import { describe, it, expect } from 'vitest'
+import { searchTafsir } from './search'
 
-### 3.2 Verses tab
-1. Select surah 1 → click Verses tab
-2. Dropdown shows actual sections (e.g., "الآيات ١ إلى ٧")
-3. Select section → tafsir text updates to match
-4. Select "عرض التفسير الإجمالى للسورة" → full text shows again
-5. No spinner/loading indicator (instant)
+describe('searchTafsir', () => {
+  it('returns empty array for empty query', () => {
+    expect(searchTafsir('', {}, new Map())).toEqual([])
+  })
 
-### 3.3 Local search
-1. Click Chat tab
-2. Type "التصوير الفني" → click Send
-3. Results show matching passages with surah names
-4. Click a result → navigates to that surah's Verses tab
-5. Type a non-matching query → zero results, no crash
-6. Empty input → Send button disabled
-
-### 3.4 Server health
-```
-$ curl http://localhost:3000/api/health
-→ {"status":"ok","time":"..."}
+  it('finds matching sections', () => {
+    const data = { 1: [{ startVerse: 1, endVerse: 1, text: 'نص عربي للبحث' }] }
+    const result = searchTafsir('عربي', data, new Map([[1, 'الفاتحة']]))
+    expect(result).toHaveLength(1)
+    expect(result[0].surahName).toBe('الفاتحة')
+  })
+})
 ```
 
-## 4. Regression Checks
-- Sidebar search, juz filter, type filter → still work
-- Bookmarks, history, completion → still work (localStorage)
-- Stats tab → still shows correct counts
-- Dark/light mode toggle → still works
+### Hook tests (with `renderHook`)
+
+Tests that exercise React hooks without mounting a full component:
+
+```ts
+// src/utils/localStorage.test.ts
+import { renderHook, act } from '@testing-library/react'
+import { useBookmarks } from './useBookmarks'
+
+describe('useBookmarks', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('toggles bookmark', () => {
+    const { result } = renderHook(() => useBookmarks())
+    act(() => result.current.toggleBookmark(1))
+    expect(result.current.isBookmarked(1)).toBe(true)
+  })
+})
+```
+
+### Component tests (with `render` + `screen`)
+
+Tests that render a component and assert on the DOM:
+
+```tsx
+// src/components/QuickSearch.test.tsx
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { QuickSearch } from './QuickSearch'
+
+it('triggers search when button clicked', async () => {
+  const onSearch = vi.fn()
+  render(<QuickSearch onSearch={onSearch} />)
+  await userEvent.click(screen.getByText('التوحيد'))
+  expect(onSearch).toHaveBeenCalledWith('التوحيد')
+})
+```
+
+## Lint Pass
+
+```bash
+pnpm run lint    # tsc --noEmit — must exit 0
+```
+
+Before committing, always run both `pnpm run lint` and `pnpm test` to verify no type errors and no regressions.

@@ -32,7 +32,11 @@
 - Chat tab → local full-text search across all tafsir text
 
 ## API Endpoints
-- `GET /api/health` — healthcheck (only remaining endpoint)
+- `GET /api/health` — healthcheck
+- `GET /api/user-data` — fetch user data from Supabase
+- `PUT /api/user-data` — save user data to Supabase
+- `GET /api/user-data/export` — export all user data as JSON
+- `POST /api/user-data/import` — import user data from JSON backup
 
 ## Missing Surahs (no tafsir in source)
 44 (الدخان), 50 (ق), 76 (الإنسان), 89 (الفجر) — shown a graceful message
@@ -53,7 +57,7 @@
 - **Never delete the branch** after merge
 
 ## Notable
-- Test framework: Vitest + Testing Library (71 tests across 8 files)
+- Test framework: Vitest + Testing Library (103 tests across 10 files)
 - `pnpm test` to run
 - No CI/CD, Docker, or GitHub Actions
 - Arabic-first; all user-facing text is Arabic

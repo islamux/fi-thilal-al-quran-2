@@ -104,14 +104,19 @@ src/
     index.ts           ← toArabicNumerals()
     search.ts          ← Full-text search
     tafsir-data.ts     ← Tafsir data lookup
+    tafsir-format.ts   ← Paragraph formatting from raw .doc text
     localStorage.ts    ← StorageBackend interface + implementations
+    highlight.ts       ← Search result highlighting
+    syncBackend.ts     ← Cloud sync via Supabase
   hooks/               ← Custom hooks (React state + utils)
     useAppState.ts     ← Combines all sub-hooks + shared state
     useTafsir.ts       ← Uses getTafsirText from utils
-    useChat.ts         ← Uses searchTafsir from utils
+    useChat.ts         ← Uses searchTafsir from utils (exports useSearch)
     useBookmarks.ts    ← Uses StorageBackend
     useProgress.ts     ← Uses StorageBackend
     useTheme.ts        ← Re-exports useTheme from context
+    useDataSync.ts     ← Cloud sync state (Supabase)
+    useDeviceId.ts     ← Unique device identifier (localStorage)
   context/
     ThemeContext.tsx    ← Provides isDarkMode + toggleTheme to all components
   components/          ← One file per component
@@ -122,11 +127,22 @@ src/
     MobileOverlay.tsx  ← Backdrop overlay for mobile sidebar
     SectionSelector.tsx ← Verse range buttons (extracted from VersesTab)
     TafsirDisplay.tsx  ← Tafsir text rendering
+    TafsirContent.tsx  ← Paragraph + verse-highlight rendering
     QuickSearch.tsx    ← Predefined search queries
-    ...
+    HighlightedText.tsx ← Search match highlighting component
+    TabBar.tsx         ← Overview / Verses / Chat / Stats tabs
+    SurahBanner.tsx    ← Surah name + type + verse count header
+    Footer.tsx         ← Bottom info bar
+    ErrorBoundary.tsx  ← Class component crash catcher
+    OverviewTab.tsx    ← Full surah tafsir (lazy-loaded)
+    VersesTab.tsx      ← Verse-range selector + tafsir (lazy-loaded)
+    ChatTab.tsx        ← Full-text search interface (lazy-loaded)
+    StatsTab.tsx       ← Bookmarks, history, progress (lazy-loaded)
   data/                ← Local content (auto-generated + hand-written)
     surahs.ts          ← 114 surah metadata + Juz index
     tafsir.ts          ← Tafsir content (~18MB, .gitignore'd)
+    tafsir-meta.ts     ← SURAHS_WITH_TAFSIR Set for O(1) presence check
+    tafsir-loader.ts   ← Dynamic import() singleton for lazy loading
   test/
     setup.ts           ← jest-dom matchers for all test files
 ```
@@ -569,11 +585,24 @@ App is `dir="rtl"`. Mind CSS logical properties:
 ## 8. Performance
 
 ### Bundle size: 18MB tafsir data
-The entire tafsir dataset (~18MB) is imported eagerly. This is acceptable because:
+The tafsir dataset (~18MB) is **lazy-loaded** via dynamic `import()` in `src/data/tafsir-loader.ts`. It is NOT imported at app startup — it only loads when the user first clicks a surah or uses search:
+
+```ts
+let dataPromise: Promise<Record<number, TafsirSection[]>> | null = null
+
+export function loadTafsirData(): Promise<Record<number, TafsirSection[]>> {
+  if (!dataPromise) {
+    dataPromise = import('./tafsir').then(m => m.TAFSIR_DATA)
+  }
+  return dataPromise
+}
+```
+
+This is acceptable because:
 - It's served gzipped (~5MB over the wire)
-- It loads once and stays in memory
+- It loads once and stays in memory (singleton promise pattern)
 - No network calls needed after initial load
-- Vite code-splits by tab, so only the current tab's JS loads
+- Vite code-splits it into its own chunk, separate from the main app bundle
 
 ### Search runs on the main thread
 The search algorithm iterates all sections synchronously. A 50ms `setTimeout` is used to let the loading spinner render before the search starts. If search becomes noticeably slow on large queries, the next step is a Web Worker in `src/utils/search.worker.ts`.
