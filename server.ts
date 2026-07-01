@@ -10,7 +10,7 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(healthRouter);
-app.use(userDataRouter);
+app.use('/api', userDataRouter);
 
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -36,4 +36,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.env.VERCEL !== '1') {
+  startServer();
+}
+
+export default app;
