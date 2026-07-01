@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase';
 
 const router = Router();
 
@@ -17,7 +17,7 @@ router.get('/api/user-data', async (req: Request, res: Response) => {
   if (!deviceId) return;
 
   try {
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('user_data')
       .select('*')
       .eq('device_id', deviceId)
@@ -27,7 +27,7 @@ router.get('/api/user-data', async (req: Request, res: Response) => {
       return res.json(existing);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_data')
       .insert({ device_id: deviceId })
       .select()
@@ -50,7 +50,7 @@ router.put('/api/user-data', async (req: Request, res: Response) => {
   const { bookmarks, history, completed, theme } = req.body;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_data')
       .upsert({
         device_id: deviceId,
@@ -78,7 +78,7 @@ router.get('/api/user-data/export', async (req: Request, res: Response) => {
   if (!deviceId) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_data')
       .select('*')
       .eq('device_id', deviceId)
@@ -107,7 +107,7 @@ router.post('/api/user-data/import', async (req: Request, res: Response) => {
   const { bookmarks, history, completed, theme } = req.body;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_data')
       .upsert({
         device_id: deviceId,
