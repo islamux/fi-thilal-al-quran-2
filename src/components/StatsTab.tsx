@@ -1,8 +1,50 @@
 import { motion } from 'motion/react';
-import { BookmarkCheck, BookOpen, Trash2, Sparkles, Clock, CheckCircle } from 'lucide-react';
+import { BookmarkCheck, BookOpen, Trash2, Sparkles, Clock, CheckCircle, Download, Upload } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { toArabicNumerals } from '../utils';
 import type { Bookmark, HistoryItem } from '../types';
+
+function handleExport(): void {
+  const bookmarks = JSON.parse(localStorage.getItem('thilal_bookmarks') || '[]');
+  const history = JSON.parse(localStorage.getItem('thilal_history') || '[]');
+  const completed = JSON.parse(localStorage.getItem('thilal_completed') || '[]');
+  const theme = localStorage.getItem('thilal_theme') || 'dark';
+
+  const data = { bookmarks, history, completed, theme, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `thilal-user-data-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleImport(): void {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data.bookmarks) || !Array.isArray(data.history) || !Array.isArray(data.completed) || typeof data.theme !== 'string') {
+        alert('ملف غير صالح: البيانات لا تطابق التنسيق المطلوب');
+        return;
+      }
+      localStorage.setItem('thilal_bookmarks', JSON.stringify(data.bookmarks));
+      localStorage.setItem('thilal_history', JSON.stringify(data.history));
+      localStorage.setItem('thilal_completed', JSON.stringify(data.completed));
+      localStorage.setItem('thilal_theme', data.theme);
+      window.location.reload();
+    } catch {
+      alert('ملف غير صالح: لا يمكن قراءة الملف');
+    }
+  };
+  input.click();
+}
 
 interface StatsTabProps {
   completedSurahs: number[];
@@ -27,15 +69,33 @@ export function StatsTab({ completedSurahs, bookmarks, readingHistory, clearAll,
         <h3 className="text-lg font-bold font-serif tracking-tight text-brand-rich dark:text-brand-dark-active">
           سجل المُدارسة
         </h3>
-        <button
-          id="clear-all-stats-btn"
-          onClick={clearAll}
-          className="flex items-center gap-1.5 text-xs text-brand-grey hover:text-red-500 transition-colors px-3 py-1.5 border border-brand-border dark:border-brand-dark-border"
-          title="مسح جميع السجلات"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          مسح الكل
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 text-xs text-brand-grey hover:text-gilded-gold transition-colors px-3 py-1.5 border border-brand-border dark:border-brand-dark-border"
+            title="تصدير البيانات"
+          >
+            <Download className="w-3.5 h-3.5" />
+            تصدير
+          </button>
+          <button
+            onClick={handleImport}
+            className="flex items-center gap-1.5 text-xs text-brand-grey hover:text-gilded-gold transition-colors px-3 py-1.5 border border-brand-border dark:border-brand-dark-border"
+            title="استيراد البيانات"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            استيراد
+          </button>
+          <button
+            id="clear-all-stats-btn"
+            onClick={clearAll}
+            className="flex items-center gap-1.5 text-xs text-brand-grey hover:text-red-500 transition-colors px-3 py-1.5 border border-brand-border dark:border-brand-dark-border"
+            title="مسح جميع السجلات"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            مسح الكل
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
