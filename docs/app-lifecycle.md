@@ -488,11 +488,11 @@ Open `src/hooks/useAppState.ts`. This is the conductor of the whole orchestra. I
 ```tsx
 export function useAppState() {
   // Shared state (useState calls)
-  const [selectedSurah, setSelectedSurah] = useState<number>(SURAHS[0].id)
+  const [selectedSurah, setSelectedSurah] = useState<Surah>(SURAHS[0])
   const [activeTab, setActiveTab] = useState<TabId>('overview')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [juzFilter, setJuzFilter] = useState<number | null>(null)
-  const [typeFilter, setTypeFilter] = useState<'الكل' | 'مكية' | 'مدنية'>('الكل')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'مكية' | 'مدنية'>('all')
   const [sidebarTab, setSidebarTab] = useState<'surahs' | 'juz'>('surahs')
 
   // Sub-hooks
@@ -521,10 +521,10 @@ The key `useEffect` near the bottom is the **bridge between clicking and loading
 
 ```tsx
 useEffect(() => {
-  fetchTafsir(selectedSurah, verseRangeValue)   // load the text
-  addHistoryItem(SURAHS[selectedSurah - 1])      // save to history
-  setVerseRangeValue('كاملة')                     // reset verse range
-}, [selectedSurah])                               // ← "when selectedSurah changes"
+  fetchTafsir(selectedSurah, 'كاملة')      // load the text
+  addHistoryItem(selectedSurah, 'كاملة')    // save to history
+  setVerseRangeValue('كاملة')               // reset verse range
+}, [selectedSurah])                          // ← "when selectedSurah changes"
 ```
 
 This says: **"Every time `selectedSurah` changes, run this code."**
@@ -538,6 +538,8 @@ This says: **"Every time `selectedSurah` changes, run this code."**
 | `useProgress` | `hooks/useProgress.ts` | Reading history + completion | localStorage |
 | `useTafsir` | `hooks/useTafsir.ts` | Tafsir text + verse range | None (derived from data) |
 | `useSearch` | `hooks/useChat.ts` | Search query + results | None (in-memory) |
+| `useDataSync` | `hooks/useDataSync.ts` | Cloud sync status (Supabase) | localStorage + Supabase |
+| `useDeviceId` | `hooks/useDeviceId.ts` | Unique device identifier | localStorage |
 
 ### How localStorage Persistence Works
 
@@ -555,11 +557,18 @@ export const localStorageBackend = {
   },
   set<T>(key: string, value: T): void {
     localStorage.setItem(key, JSON.stringify(value))
+    this._callbacks.forEach(cb => cb(key, value))
+  },
+  _callbacks: ChangeCallback[] = [],
+  onChange(callback: ChangeCallback): void {
+    this._callbacks.push(callback)
   }
 }
 ```
 
 Every time a bookmark is added or removed, the hook calls `localStorageBackend.set()`. On initial load, it calls `.get()` to restore previous state. This is why your bookmarks and dark mode preference survive a page refresh — they're saved in the browser's local storage.
+
+The `onChange` callback system lets cloud sync (`useDataSync`) listen for changes and sync to Supabase whenever bookmarks, history, or theme are updated.
 
 ---
 
@@ -751,7 +760,8 @@ export function searchTafsir(
         matches.push({
           surahId: Number(surahId),
           surahName: surahNames.get(Number(surahId)) ?? '',
-          verseRange: `${section.startVerse}-${section.endVerse}`,
+          startVerse: section.startVerse,
+          endVerse: section.endVerse,
           excerpt: generateExcerpt(section.text, queryWords),
           score: matchCount
         })
