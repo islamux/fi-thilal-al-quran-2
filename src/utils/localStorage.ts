@@ -1,3 +1,5 @@
+type ChangeCallback = (key: string, value: unknown) => void;
+
 export const localStorageBackend = {
   get<T>(key: string): T | null {
     const raw = localStorage.getItem(key);
@@ -6,5 +8,13 @@ export const localStorageBackend = {
   },
   set<T>(key: string, value: T): void {
     localStorage.setItem(key, JSON.stringify(value));
+    this._callbacks.forEach(cb => { try { cb(key, value); } catch { /* swallow */ } });
+  },
+  _callbacks: [] as ChangeCallback[],
+  onChange(callback: ChangeCallback): () => void {
+    this._callbacks.push(callback);
+    return () => {
+      this._callbacks = this._callbacks.filter(cb => cb !== callback);
+    };
   },
 };
